@@ -140,9 +140,6 @@ class HierarchicalBayesInference(HierarchicalModel):
                 loc=0.0,
                 scale=0.1,
             )
-            # self.priors_init["sigma_y"] = prior_structure(
-            #     halfnorm_ppf, loc=1.0, scale=10.0,
-            # )
             self.priors_init["gamma"] = prior_structure(
                 halfnorm_ppf,
                 loc=0.2,
@@ -222,7 +219,9 @@ class HierarchicalBayesInference(HierarchicalModel):
                 G = gabor_filter(self.X_FoV, self.Y_FoV, **params)
                 self.timeit("calculating gabor filter")
 
-                rate = np.einsum("ij,abcij->abc", G, self.gratings, order="C") * dx * dy
+                rate = np.einsum("ij,abcij->abc", G, self.gratings, order="C") * (
+                    dx * dy
+                )
                 # rate = np.vdot(G, self.gratings) * dx * dy
                 self.timeit("calculating model firing rate")
 
@@ -236,7 +235,6 @@ class HierarchicalBayesInference(HierarchicalModel):
                 self.timeit("transforming parameters")
                 # print(params)
                 G_even = gabor_filter(self.X_FoV, self.Y_FoV, **params)
-                G = G_even
                 G_odd = gabor_filter(
                     self.X_FoV,
                     self.Y_FoV,
@@ -257,6 +255,7 @@ class HierarchicalBayesInference(HierarchicalModel):
                 ) * (dx * dy)
                 self.timeit("calculating model firing rate")
 
+                G = G_even
                 rate = np.sqrt(rate_even**2 + rate_odd**2)
 
                 # rate = (
