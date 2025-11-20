@@ -97,10 +97,10 @@ class HierarchicalBayesInference(HierarchicalModel):
                 theta,
                 f,
                 phi_0,
-                square=True,
+                square=False,
             )
 
-    def set_priors(self, priors_init=None):
+    def set_priors(self, coding="simple", priors_init=None):
 
         if priors_init is None:
 
@@ -114,49 +114,51 @@ class HierarchicalBayesInference(HierarchicalModel):
                 loc=1.0,
                 scale=A0_guess,
             )
-            self.priors_init["nl_amplitude"] = prior_structure(
-                halfnorm_ppf,
-                loc=1.0,
-                scale=5.0,
-            )
-            # self.priors_init["amplitude"] = prior_structure(
-            #     halfnorm_ppf,
-            #     loc=0.0,
-            #     scale=A_guess - A0_guess,
-            # )
-            self.priors_init["theta"] = prior_structure(
-                bounded_flat,
-                low=-np.pi / 2,
-                high=np.pi / 2,
-                periodic=True,
-            )
-            self.priors_init["f"] = prior_structure(
-                halfnorm_ppf,
-                loc=0.0,
-                scale=5.0,
-            )
-            self.priors_init["sigma"] = prior_structure(
-                halfnorm_ppf,
-                loc=0.0,
-                scale=0.1,
-            )
-            self.priors_init["gamma"] = prior_structure(
-                halfnorm_ppf,
-                loc=0.2,
-                scale=0.5,
-            )
-            self.priors_init["phi_0"] = prior_structure(
-                bounded_flat,
-                low=-np.pi,
-                high=np.pi,
-                periodic=True,
-            )
-            # self.priors_init["theta_gauss"] = prior_structure(
-            #     # bounded_flat, low=0.0, high=np.pi, periodic=True,
-            #     norm_ppf,
-            #     mean=0.0,
-            #     sigma=np.pi / 4.0,
-            # )
+
+            if not (coding == "random"):
+                self.priors_init["nl_amplitude"] = prior_structure(
+                    halfnorm_ppf,
+                    loc=1.0,
+                    scale=5.0,
+                )
+                # self.priors_init["amplitude"] = prior_structure(
+                #     halfnorm_ppf,
+                #     loc=0.0,
+                #     scale=A_guess - A0_guess,
+                # )
+                self.priors_init["theta"] = prior_structure(
+                    bounded_flat,
+                    low=-np.pi / 2,
+                    high=np.pi / 2,
+                    periodic=True,
+                )
+                self.priors_init["f"] = prior_structure(
+                    halfnorm_ppf,
+                    loc=0.0,
+                    scale=5.0,
+                )
+                self.priors_init["sigma"] = prior_structure(
+                    halfnorm_ppf,
+                    loc=0.0,
+                    scale=0.1,
+                )
+                self.priors_init["gamma"] = prior_structure(
+                    halfnorm_ppf,
+                    loc=1.0,
+                    scale=2.0,
+                )
+                self.priors_init["phi_0"] = prior_structure(
+                    bounded_flat,
+                    low=-np.pi,
+                    high=np.pi,
+                    periodic=True,
+                )
+                self.priors_init["theta_gauss"] = prior_structure(
+                    # bounded_flat, low=0.0, high=np.pi, periodic=True,
+                    norm_ppf,
+                    mean=0.0,
+                    sigma=np.pi / 4.0,
+                )
 
             # ### nonlinearity parameters
             # self.priors_init["nl_alpha"] = prior_structure(
@@ -200,6 +202,7 @@ class HierarchicalBayesInference(HierarchicalModel):
             p_in,
             plot=False,
         ):
+            print(dx, dy)
 
             self.timeit()
             """
@@ -209,11 +212,12 @@ class HierarchicalBayesInference(HierarchicalModel):
                     - ellipse in rate space
             """
 
+            params = self.get_params_from_p(p_in)
+
             if coding == "random":
                 rate = np.zeros(self.dimensions["shape"])
 
             elif coding == "simple":
-                params = self.get_params_from_p(p_in)
                 self.timeit("transforming parameters")
 
                 G = gabor_filter(self.X_FoV, self.Y_FoV, **params)
@@ -222,6 +226,8 @@ class HierarchicalBayesInference(HierarchicalModel):
                 rate = np.einsum("ij,abcij->abc", G, self.gratings, order="C") * (
                     dx * dy
                 )
+
+                print("G mean:", G.mean())
                 # rate = np.vdot(G, self.gratings) * dx * dy
                 self.timeit("calculating model firing rate")
 
@@ -231,18 +237,18 @@ class HierarchicalBayesInference(HierarchicalModel):
                 # )
 
             elif coding == "complex":
-                params = self.get_params_from_p(p_in)
+                # params = self.get_params_from_p(p_in)
                 self.timeit("transforming parameters")
                 # print(params)
                 G_even = gabor_filter(self.X_FoV, self.Y_FoV, **params)
                 G_odd = gabor_filter(
                     self.X_FoV,
                     self.Y_FoV,
-                    theta=params["theta"] + np.pi / 2,
+                    theta=params["theta"],
                     f=params["f"],
                     sigma=params["sigma"],
                     gamma=params["gamma"],
-                    phi_0=params["phi_0"],
+                    phi_0=params["phi_0"] + np.pi / 2,
                     theta_gauss=params.get("theta_gauss", None),
                 )
                 self.timeit("calculating gabor filter")
@@ -263,7 +269,9 @@ class HierarchicalBayesInference(HierarchicalModel):
                 #     * params["nl_amplitude"]
                 # )
 
-            rate = softplus(rate * params["nl_amplitude"], delta=params["nl_offset"])
+            rate = softplus(
+                rate * params.get("nl_amplitude", 1.0), delta=params["nl_offset"]
+            )
 
             ## no negative firing rates!!!
             self.timeit("applying nonlinearity")

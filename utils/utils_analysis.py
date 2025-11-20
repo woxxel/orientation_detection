@@ -16,6 +16,7 @@ def get_spikes(
 
     return spikes
 
+
 def get_unique_stimulus_values(stimulus_data):
     unique_values = {
         "phases": np.unique(stimulus_data["stim_phases"]),
@@ -26,11 +27,12 @@ def get_unique_stimulus_values(stimulus_data):
 
 
 def calculate_firing_maps(
-        stimulus_data, 
-        spikes,
-        # f=30.05,
-        dt_onset = 0.25,  # time to wait after stimulus onset before starting to count spikes
-        dt_response = 0.25
+    stimulus_data,
+    spikes,
+    f=30.05,
+    dt_onset=0.25,  # time to wait after stimulus onset before starting to count spikes
+    dt_response=0.25,
+    stimulus_frames=None,
 ):
     n_cells = spikes.shape[0]
 
@@ -66,20 +68,34 @@ def calculate_firing_maps(
             & (stimulus_data["stim_cycles"] == elems[2])
         ).flatten()
 
+        # print(np.where(idxes))
+
         # print(idx,elems)
         times = stimulus_data["stimulus_clock"][idxes, :]
-        for t, time in enumerate(times):
-            # print(time)
-            start_idx = np.argmin(np.abs(stimulus_data["frame_times"] - (time[0] + dt_onset)))
-            end_idx = np.argmin(
-                np.abs(stimulus_data["frame_times"] - (time[0] + dt_onset + dt_response))
-            )
+        # for t, time in enumerate(times):
+        for t, time in zip(np.where(idxes)[0], times):
+            # print("time:", t, time)
+            # start_idx = np.argmin(np.abs(stimulus_data["frame_times"] - (time[0] + dt_onset)))
+            # end_idx = np.argmin(
+            #     np.abs(stimulus_data["frame_times"] - (time[0] + dt_onset + dt_response))
+            # )
+            # start_idx = np.argmin(np.abs(stimulus_data["frame_times"] - time[0]))
+            # end_idx = np.argmin(np.abs(stimulus_data["frame_times"] - time[1]))
+
+            # print("estimate:\t", start_idx, end_idx)
+
+            # start_idx = int(stimulus_frames[t, 0])
+            start_idx = int(stimulus_frames[t, 0] + dt_onset * f)
+            end_idx = start_idx + int(dt_response * f)
+            # print("exact:\t", start_idx, end_idx)
+            # print("exact:\t", *stimulus_idxes[t])
 
             event_counts[idx[0], idx[1], idx[2], :] += spikes[:, start_idx:end_idx].sum(axis=1)
             # / (stimulus_data["frame_times"][end_idx] - stimulus_data["frame_times"][start_idx])
 
-            dwelltime[idx[0], idx[1], idx[2]] += (
-                stimulus_data["frame_times"][end_idx] - stimulus_data["frame_times"][start_idx]
-            )
+            dwelltime[idx[0], idx[1], idx[2]] += dt_response
+            # (
+            #     stimulus_frames[t,3] - stimulus_data["frame_times"][start_idx]
+            # )
 
     return event_counts, dwelltime        

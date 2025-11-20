@@ -37,9 +37,10 @@ def gabor_filter(
     )
 
 def gabor_rate_response(X,Y,params,img,mode="simple"):
-    
+
     if mode == "simple":
         G = gabor_filter(X, Y, **params)
+
         return np.einsum("ij,abcij->abc", G, img, order="C")
     elif mode == "complex":
         rate_even = gabor_rate_response(X, Y, params, img, mode="simple")
