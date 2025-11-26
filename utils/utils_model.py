@@ -36,12 +36,24 @@ def gabor_filter(
         * np.cos(2 * np.pi * f * x_prime + phi_0)
     )
 
-def gabor_rate_response(X,Y,params,img,mode="simple"):
+
+def gabor_rate_response(X, Y, params, img, mode="simple"):
 
     if mode == "simple":
         G = gabor_filter(X, Y, **params)
+        print(G.mean(), np.abs(G).mean())
+        print(img.mean(), np.abs(img).mean())
 
-        return np.einsum("ij,abcij->abc", G, img, order="C")
+        G -= G.mean()
+        img -= img.mean()
+
+        ## construct proper einsum arguments
+        string = ""
+        for i in range(len(img.shape) - 2):
+            string += chr(ord("a") + i)
+        einsum_string = f"ij,{string}ij->{string}"
+
+        return np.einsum(einsum_string, G, img, order="C")
     elif mode == "complex":
         rate_even = gabor_rate_response(X, Y, params, img, mode="simple")
         rate_odd = gabor_rate_response(X, Y, params | {"phi_0": params["phi_0"] + np.pi / 2}, img, mode="simple")
