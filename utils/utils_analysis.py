@@ -1,7 +1,7 @@
 import numpy as np
 import itertools
 
-from placefield_dynamics.placefield_detection.utils.utils_analysis import (
+from turnover_dynamics.place_selectivity_inference.utils.utils_analysis import (
     get_spiking_data,
 )
 

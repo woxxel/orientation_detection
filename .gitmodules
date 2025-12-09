@@ -1,3 +1,3 @@
-[submodule "HierarchicalBayesModel"]
-	path = HierarchicalBayesModel
-	url = https://github.com/woxxel/HierarchicalBayesModel.git
+[submodule "Hierarchical Bayes Inference"]
+	path = hierarchical_bayes_inference
+	url = https://gitlab.gwdg.de/alexander.schmidt/hierarchical-bayes-inference.git

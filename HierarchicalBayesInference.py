@@ -8,21 +8,21 @@ import matplotlib.pyplot as plt
 # from scipy.interpolate import interp1d
 import itertools
 
-from .HierarchicalBayesModel import HierarchicalModel
-from .HierarchicalBayesModel.structures import (
+from .hierarchical_bayes_inference import HierarchicalModel
+from .hierarchical_bayes_inference.structures import (
     build_distr_structure_from_params,
     build_key,
     prior_structure,
     parse_name_and_indices,
 )
-from .HierarchicalBayesModel.functions import (
+from .hierarchical_bayes_inference.functions import (
     halfnorm_ppf,
     norm_ppf,
     bounded_flat,
     norm_cdf,
 )
 
-from placefield_dynamics.placefield_detection.utils import (
+from turnover_dynamics.place_selectivity_inference.utils import (
     gauss_smooth,
     get_spiking_data,
 )

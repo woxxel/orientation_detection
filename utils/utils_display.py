@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from placefield_dynamics.placefield_detection.utils import (
+from turnover_dynamics.place_selectivity_inference.utils import (
     gauss_smooth,
 )  
 
